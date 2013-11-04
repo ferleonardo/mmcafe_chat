@@ -4,6 +4,7 @@ var io = require('socket.io').listen(app);
 var fs = require('fs');
 
 var config = require('./config');
+var logger = require('./logger');
 
 app.listen(config.socketport);
 
@@ -17,6 +18,16 @@ app.get('/', function (req, res) {
   res.sendfile(__dirname + '/index.html');
 });
 
+process.on('uncaughtException', function(err) {
+    console.log(err);
+});
+
+/*
+var access = fs.createWriteStream(config.logging.path + '/node.access.log', { flags: 'a' })
+      , error = fs.createWriteStream(config.logging.path + '/node.error.log', { flags: 'a' });
+proc.stdout.pipe(access);
+proc.stderr.pipe(error);
+*/
 
 var User = function() {
 	this.name = null;
@@ -24,40 +35,17 @@ var User = function() {
 	this.avatar = null;
 };
 
-var Queue = [];
-
-/*
-var queuedMessage = {
-	this.name : null,
-	this.id : null,
-	this.avatar : null,
-	this.message : null
-};
-*/
 
 var users = {};
 
 io.sockets.on('connection', function (socket) {
 
-	/*
-	setInterval(function() {
-		var clients = io.sockets.clients();
-		for(var i=0; i<clients.length; i++) {
-			users[clients[i]]);
-		}
-	}, 15000);
-*/
 
 	socket.on('adduser', function(data){
 		// we store the username in the socket session for this client
 		socket.user_id = data.id;
 		// add the client's username to the global list
 		users[data.id] = {name: data.name, id: data.id};
-		// echo to client they've connected
-		//socket.emit('updatechat', 'SERVER', 'you have connected');
-		// echo globally (all clients) that a person has connected
-		//socket.broadcast.emit('updatechat', 'SERVER', data.name + ' has connected');
-		// update the list of users in chat, client-side
 
 		socket.emit("send_status", users);
 		socket.join(data.id);
@@ -65,11 +53,7 @@ io.sockets.on('connection', function (socket) {
 
 
 	socket.on('disconnect', function() {
-		//delete users[socket.user_id];
-		// update list of users in chat, client-side
-		//socket.broadcast.emit('updateusers', users, "keep");
-		//io.sockets.in(socket.user_id).emit('updateusers', users, "disconnected");
-		//socket.leave(data.id);
+
 
 		users[socket.user_id].status = "notavailable";
 
@@ -77,27 +61,50 @@ io.sockets.on('connection', function (socket) {
 
 	socket.on('sendchat', function (data) {
 		// we tell the client to execute 'updatechat' with 2 parameters
+		logger.chat_op(data.target, socket.user_id, data.message);
 		if(users[data.target]!=undefined) {
 			if(users[data.target].status == "visible") {
 				io.sockets.in(socket.user_id).emit('updatedchat', {to: data.target, message: data.message});
 				io.sockets.in(data.target).emit('updatechat', {from: socket.user_id, name: users[socket.user_id].name, message: data.message, avatar: users[socket.user_id].avatar});	
 			} else {
+
 				io.sockets.in(socket.user_id).emit('notupdatedchat', {to: data.target, reason: users[data.target].status, message: data.message});
-				Queue[data.target] = Queue[data.target] || [];
-				Queue[data.target].push({
-					name : users[socket.user_id].name,
-					id : socket.user_id,
-					avatar : users[socket.user_id].avatar,
-					message : data.message
+
+
+				var q = {	name : users[socket.user_id].name,
+							id : socket.user_id,
+							avatar : users[socket.user_id].avatar,
+							message : data.message
+				};
+		
+
+				var fileName = config.queue.path + "/" + data.target + ".json";
+				fs.exists(fileName, function (exists) {
+					if(exists){
+						fs.readFile(fileName, function(err, datastr) {
+							try {
+								var arr = JSON.parse(datastr);
+								arr.push(q);
+								var str = JSON.stringify(arr);
+								fs.writeFile(fileName, str);
+							} catch(err) {
+								console.log(err);
+							}
+						});
+					} else {
+						var arr = [];
+						arr.push(q);
+						try {
+							var str = JSON.stringify(arr);
+							fs.writeFile(fileName);
+							fs.writeFile(fileName, str);
+						} catch(err) {
+							console.log(err);
+						}
+					}
 				});
 
-				var str = JSON.stringify(Queue[data.target]);
 
-				fs.writeFile(config.queue.path + "/" + data.target + ".json", str, function(err) {
-					if(err) {
-						console.log(err);
-					}
-				}); 
 			}
 			
 		}
@@ -105,16 +112,16 @@ io.sockets.on('connection', function (socket) {
 
 	socket.on("check_status", function(data) {
 		if(users[data.user_id]!=undefined)
-			io.sockets.in(socket.user_id).emit('get_status', "connected", data.cb);
+			socket.emit('get_status', "connected", data.cb);
 		else
-			io.sockets.in(socket.user_id).emit('get_status', "disconnected", data.cb);
+			socket.emit('get_status', "disconnected", data.cb);
 	});
 
 	socket.on("check_otheruser_status", function(data) {
 		if(users[data.user_id]!=undefined)
-			io.sockets.in(socket.user_id).emit('get_otheruser_status', {status: "connected", type: data.type, user_id: data.user_id});
+			socket.emit('get_otheruser_status', {status: "connected", type: data.type, user_id: data.user_id});
 		else
-			io.sockets.in(socket.user_id).emit('get_otheruser_status', {status: "disconnected", type: data.type, user_id: data.user_id });
+			socket.emit('get_otheruser_status', {status: "disconnected", type: data.type, user_id: data.user_id });
 	});
 
 	socket.on('toggle_connection', function(data){
@@ -123,20 +130,29 @@ io.sockets.on('connection', function (socket) {
 			// remove the username from global usernames list
 			delete users[data.id];
 			// update list of users in chat, client-side
-			socket.broadcast.emit('updateusers', users, "keep");
-			io.sockets.in(socket.user_id).emit('updateusers', users, "disconnected");
+			
+			socket.broadcast.to("chat").emit('updateusers', users, "keep");
+			socket.emit('updateusers', users, "disconnected");
+
+			logger.single_op(data.id, "desconectou");
+			//socket.leave(data.id);
+			socket.leave("chat");
 			socket.leave(data.id);
 		} else {
 			socket.user_id = data.id;
 			// add the client's username to the global list
 
 			users[data.id] = {name: data.name, id: data.id, avatar: data.avatar, status: "visible"};
-			//io.sockets.emit('updateusers', users, "connected", "keep");
-
+			
+			socket.join("chat");
 			socket.join(data.id);
 
-			socket.broadcast.emit('updateusers', users, "keep");
-			io.sockets.in(socket.user_id).emit('updateusers', users, "connected");
+			socket.broadcast.to("chat").emit('updateusers', users, "keep");
+			//io.sockets.in(socket.user_id).emit('updateusers', users, "connected");
+			//io.sockets.in("chat").emit('updateusers', users, "connected");
+			socket.emit('updateusers', users, "connected");
+
+			logger.single_op(data.id, "conectou");
 
 
 			fs.readFile(config.queue.path + "/" + data.id + ".json", function(err, data) {
@@ -144,24 +160,23 @@ io.sockets.on('connection', function (socket) {
 				if(err) {
 					console.log(err);
 				} else {
+					if(data==null || data=="")
+						return false;
 					JSON.parse(data).forEach(function(item) { 
 						io.sockets.in(socket.user_id).emit('updatechat', {from: item.id, name: item.name, message: item.message, avatar: item.avatar});	
 					});
 
 					fs.unlink(config.queue.path + "/" + socket.user_id + ".json", function (err) {
 					if (err) throw err;
-						console.log('successfully deleted /tmp/hello');
+						console.log('successfully deleted');
 					});
 				}
 				
 			}); 
-			//send queued messages
-			//if(queue[data.id]) {
-				
-			//	delete queue[data.id];
-			//}
+			
 			
 		}
 	});
 
 });
+
