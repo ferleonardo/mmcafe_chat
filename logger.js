@@ -27,7 +27,7 @@ logger.chat_op = function(user_id, otheruser_id, msg) {
 		var userprefix = user_id + "_" + otheruser_id;
 	}
 
-	fs.appendFile(config.logging.path + "/chats/" + file_prefix + "_" + userprefix + ".log", msg, function(err) {
+	fs.appendFile(config.logging.chat_path +"/" + file_prefix + "_" + userprefix + ".log", msg, function(err) {
 		if (err) throw console.log('Erro ao salvar no log');
 
 	});

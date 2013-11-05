@@ -15,7 +15,6 @@ app.on("close", function() {
 
 process.on('SIGINT', function () {
 	users = {};
-	logger.server_op("testando!");
 	io.sockets.clients('chat').forEach(function(socket) {
 		socket.emit('updateusers', {}, "disconnected");
 	});

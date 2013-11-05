@@ -8,7 +8,8 @@ config.queue = {
 };
 
 config.logging = {
-	path: "logs"
+	path: "logs",
+	chat_path: "logs/chat"
 }
 
 module.exports = config;
