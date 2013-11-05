@@ -17,23 +17,13 @@ io.set("origins", config.origin);
 app.get('/', function (req, res) {
   res.sendfile(__dirname + '/index.html');
 });
+app.get('/index.html', function (req, res) {
+  res.sendfile('index.html', {root: __dirname});
+});
 
 process.on('uncaughtException', function(err) {
     console.log(err);
 });
-
-/*
-var access = fs.createWriteStream(config.logging.path + '/node.access.log', { flags: 'a' })
-      , error = fs.createWriteStream(config.logging.path + '/node.error.log', { flags: 'a' });
-proc.stdout.pipe(access);
-proc.stderr.pipe(error);
-*/
-
-var User = function() {
-	this.name = null;
-	this.id = null;
-	this.avatar = null;
-};
 
 
 var users = {};
@@ -49,14 +39,6 @@ io.sockets.on('connection', function (socket) {
 
 		socket.emit("send_status", users);
 		socket.join(data.id);
-	});
-
-
-	socket.on('disconnect', function() {
-
-
-		users[socket.user_id].status = "notavailable";
-
 	});
 
 	socket.on('sendchat', function (data) {
