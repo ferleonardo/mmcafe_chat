@@ -1,2 +1,4 @@
 node_modules/
-logs/
+logs/*.log
+logs/chats/*.log
+queues/*.log
