@@ -24,9 +24,9 @@ process.on('SIGINT', function () {
 
 logger.server_op("servidor iniciado");
 
-io.configure('development', function(){
-  io.set('transports', ['xhr-polling']);
-});
+//io.configure('development', function(){
+//  io.set('transports', ['xhr-polling']);
+//});
 
 io.set("origins", config.origin);
 
