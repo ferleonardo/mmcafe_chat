@@ -1,12 +1,17 @@
-var app = require('express').createServer()
-var io = require('socket.io').listen(app);
+//var app = require('express').createServer();
+var express = require("express")
+	, app = express()
+	, http = require('http')
+	, server = http.createServer(app);
+
+var io = require('socket.io').listen(server);
 
 var fs = require('fs');
 
 var config = require('./config');
 var logger = require('./logger');
 
-app.listen(config.socketport);
+server.listen(config.socketport);
 
 app.on("close", function() {
 	

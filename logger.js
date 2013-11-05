@@ -10,7 +10,8 @@ logger.single_op = function(user_id, msg) {
 	var file_prefix = now.getFullYear() + "_" + now.getMonth() + "_" + now.getDate();
 
 	fs.appendFile(config.logging.path + "/" + file_prefix + "_access.log", msg, function(err) {
-		if (err) throw console.log('Erro ao salvar no log');
+		if (err)
+			throw console.log('Erro ao salvar no log');
 
 	});
 };
@@ -28,7 +29,8 @@ logger.chat_op = function(user_id, otheruser_id, msg) {
 	}
 
 	fs.appendFile(config.logging.chat_path +"/" + file_prefix + "_" + userprefix + ".log", msg, function(err) {
-		if (err) throw console.log('Erro ao salvar no log');
+		if (err)
+			throw console.log('Erro ao salvar no log');
 
 	});
 };
@@ -40,7 +42,8 @@ logger.server_op = function(msg) {
 	var file_prefix = now.getFullYear() + "_" + now.getMonth() + "_" + now.getDate();
 
 	fs.appendFile(config.logging.path + "/" + file_prefix + "_access.log", msg, function(err) {
-		if (err) throw console.log('Erro ao salvar no log');
+		if (err)
+			throw console.log('Erro ao salvar no log');
 
 	});
 };
