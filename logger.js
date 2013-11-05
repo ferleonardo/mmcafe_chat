@@ -33,4 +33,16 @@ logger.chat_op = function(user_id, otheruser_id, msg) {
 	});
 };
 
+logger.server_op = function(msg) {
+	var now = new Date();
+	var msg = "\n" + now + " - " + msg;
+	
+	var file_prefix = now.getFullYear() + "_" + now.getMonth() + "_" + now.getDate();
+
+	fs.appendFile(config.logging.path + "/" + file_prefix + "_access.log", msg, function(err) {
+		if (err) throw console.log('Erro ao salvar no log');
+
+	});
+};
+
 module.exports = logger;

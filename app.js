@@ -8,6 +8,23 @@ var logger = require('./logger');
 
 app.listen(config.socketport);
 
+app.on("close", function() {
+	
+	logger.server_op("servidor desligado");
+});
+
+process.on('SIGINT', function () {
+	users = {};
+	logger.server_op("testando!");
+	io.sockets.clients('chat').forEach(function(socket) {
+		socket.emit('updateusers', {}, "disconnected");
+	});
+	logger.server_op("servidor desligado");
+  //app.close();
+});
+
+logger.server_op("servidor iniciado");
+
 io.configure('development', function(){
   io.set('transports', ['xhr-polling']);
 });
@@ -21,15 +38,16 @@ app.get('/index.html', function (req, res) {
   res.sendfile('index.html', {root: __dirname});
 });
 
+/*
 process.on('uncaughtException', function(err) {
     console.log(err);
 });
+*/
 
 
 var users = {};
 
 io.sockets.on('connection', function (socket) {
-
 
 	socket.on('adduser', function(data){
 		// we store the username in the socket session for this client
@@ -39,6 +57,10 @@ io.sockets.on('connection', function (socket) {
 
 		socket.emit("send_status", users);
 		socket.join(data.id);
+	});
+
+	socket.on('disconnect', function() {
+		users[socket.user_id].status = "notavailable";
 	});
 
 	socket.on('sendchat', function (data) {
@@ -130,8 +152,6 @@ io.sockets.on('connection', function (socket) {
 			socket.join(data.id);
 
 			socket.broadcast.to("chat").emit('updateusers', users, "keep");
-			//io.sockets.in(socket.user_id).emit('updateusers', users, "connected");
-			//io.sockets.in("chat").emit('updateusers', users, "connected");
 			socket.emit('updateusers', users, "connected");
 
 			logger.single_op(data.id, "conectou");
