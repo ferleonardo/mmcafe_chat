@@ -1,0 +1,40 @@
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	
+	
+	<link rel='stylesheet' href='style.css' />
+	
+	
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+	<!--
+	Change http://localhost:3010 to your chat server path
+	-->
+	<script src="http://localhost:3010/socket.io/socket.io.js"></script>
+	<script src="client.js"></script>
+	
+	<script>
+	$(document).ready(function() {
+		var name = prompt("Qual seu nome?");
+		if(name=="")
+			return false;
+		var my_chat = new Chat({
+			server: "http://localhost:3010",
+			userid : Math.floor(Math.random()*10001),
+			username : name,
+			useravatar : ""
+			
+		});
+		my_chat.init({
+			onconnect: function(chatsocket) {
+				//some callback to be executed after connect	
+			}
+		});
+	});
+	</script>
+	
+	
+</head>
+<body>
+</body>
+</html>
