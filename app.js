@@ -13,10 +13,12 @@ var logger = require('./logger');
 
 server.listen(config.socketport);
 
+/*
 app.on("close", function() {
-	
 	logger.server_op("servidor desligado");
 });
+*/
+
 
 process.on('SIGINT', function () {
 	users = {};
@@ -24,16 +26,20 @@ process.on('SIGINT', function () {
 		socket.emit('updateusers', {}, "disconnected");
 	});
 	logger.server_op("servidor desligado");
-  //app.close();
+	setTimeout(function() {
+		process.exit();	
+	}, 10);
+	
 });
 
 logger.server_op("servidor iniciado");
 
-//io.configure('development', function(){
-//  io.set('transports', ['xhr-polling']);
-//});
+io.configure('development', function(){
+  io.set('transports', ['xhr-polling']);
+});
 
-io.set("origins", config.origin);
+if(config.origin!="")
+	io.set("origins", config.origin);
 
 app.get('/', function (req, res) {
   res.sendfile(__dirname + '/index.html');

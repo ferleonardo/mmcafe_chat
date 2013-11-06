@@ -2,3 +2,4 @@ node_modules/
 logs/*.log
 logs/chats/*.log
 queues/*.log
+client/
