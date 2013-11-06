@@ -1,7 +1,7 @@
 var config = {};
 
 config.origin = "localhost:8080";
-config.socketport = "8094";
+config.socketport = "3000";
 
 config.queue = {
 	path : "queues"
