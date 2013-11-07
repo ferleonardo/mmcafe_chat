@@ -70,7 +70,8 @@ io.sockets.on('connection', function (socket) {
 	});
 
 	socket.on('disconnect', function() {
-		users[socket.user_id].status = "notavailable";
+		if(users[socket.user_id])
+			users[socket.user_id].status = "notavailable";
 	});
 
 	socket.on('sendchat', function (data) {

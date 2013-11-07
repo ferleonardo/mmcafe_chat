@@ -1,6 +1,6 @@
 var config = {};
 
-config.origin = "localhost:8080";
+config.origin = "http://localhost:8080:";
 config.socketport = "3010";
 
 config.queue = {
